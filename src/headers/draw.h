@@ -1,11 +1,13 @@
 #pragma once
 #include "window.h"
+
+template <typename T>
 struct Color
 {
-  float red;
-  float green;
-  float blue;
-  float alpha;
+  T red;
+  T green;
+  T blue;
+  T alpha;
 };
 
-void DrawBackground(SDLWindowState state, Color backgroundColor);
+void DrawBackground(SDLWindowState state, Color<float> backgroundColor);

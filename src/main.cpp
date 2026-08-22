@@ -1,5 +1,6 @@
 #include "headers/draw.h"
 #include "SDL3/SDL_main.h"
+#include <stdio.h>
 
 int main(int argc, char *argv[])
 {
@@ -11,9 +12,11 @@ int main(int argc, char *argv[])
   int width = 800;
   int height = 600;
 
-  CreateWindowAndRenderer("SDL3Window", width, height, SDL_WINDOW_RESIZABLE, state);
+  CreateWindowAndRenderer("SDL3Window", width, height, 0, state);
 
-  Color backgroundColor = {0.0, 0.0, 0.0, 1.0};
+  Color<float> backgroundColor = {0.0, 0.0, 0.0, 1.0};
+  int *pWidth;
+  int *pHeight;
   // game loop
   bool running = true;
   while(running)
@@ -35,11 +38,6 @@ int main(int argc, char *argv[])
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
 
-    const double now = ((double)SDL_GetTicks()) / 1000.0;
-
-    backgroundColor.red = (float) (0.5 + 0.5 * SDL_sin(now));
-    backgroundColor.green = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2/3));
-    backgroundColor.blue = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D) * 4/3);
   }
   CleanUp(state);
 }
