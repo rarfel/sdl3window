@@ -1,10 +1,7 @@
 #include "headers/draw.h"
 
-template <typename T>
-struct Color;
-
-void DrawBackground(SDLWindowState state, Color<float> backgroundColor)
+void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
 {
-  SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.red, backgroundColor.green, backgroundColor.blue, backgroundColor.alpha);
+  SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
   SDL_RenderClear(state.renderer);
 }

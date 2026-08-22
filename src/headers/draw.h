@@ -1,13 +1,5 @@
 #pragma once
 #include "window.h"
+#include "glm/glm.hpp"
 
-template <typename T>
-struct Color
-{
-  T red;
-  T green;
-  T blue;
-  T alpha;
-};
-
-void DrawBackground(SDLWindowState state, Color<float> backgroundColor);
+void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);

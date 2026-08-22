@@ -11,8 +11,8 @@ int main(int argc, char *argv[])
 
   CreateWindowAndRenderer("SDL3Window", SDL_WINDOW_RESIZABLE, state);
 
-  Color<float> backgroundColor = {0.0, 0.0, 0.0, 1.0};
-  Color<int> lineColor = {255, 0, 255, 255};
+  glm::vec4 backgroundColor = {0.0, 0.0, 0.0, 1.0};
+  glm::ivec4 lineColor = {255, 0, 255, 255};
   // game loop
   bool running = true;
   while(running)
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
     // Drawing commands
     DrawBackground(state, backgroundColor);
-    SDL_SetRenderDrawColor(state.renderer, lineColor.red, lineColor.green, lineColor.blue, lineColor.alpha);
+    SDL_SetRenderDrawColor(state.renderer, lineColor.r, lineColor.g, lineColor.b, lineColor.a);
     SDL_RenderLine(state.renderer, 0, 0, state.width, state.height);
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
