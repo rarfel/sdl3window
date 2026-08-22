@@ -1,4 +1,4 @@
-#include "headers/window.h"
+#include "headers/draw.h"
 #include "SDL3/SDL_main.h"
 
 int main(int argc, char *argv[])
@@ -13,6 +13,7 @@ int main(int argc, char *argv[])
 
   CreateWindowAndRenderer("SDL3Window", width, height, SDL_WINDOW_RESIZABLE, state);
 
+  Color backgroundColor = {0.0, 0.0, 0.0, 1.0};
   // game loop
   bool running = true;
   while(running)
@@ -30,10 +31,15 @@ int main(int argc, char *argv[])
       }
     }
     // Drawing commands
-    SDL_SetRenderDrawColor(state.renderer, 255, 255, 255, 255);
-    SDL_RenderClear(state.renderer);
+    DrawBackground(state, backgroundColor);
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
+
+    const double now = ((double)SDL_GetTicks()) / 1000.0;
+
+    backgroundColor.red = (float) (0.5 + 0.5 * SDL_sin(now));
+    backgroundColor.green = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2/3));
+    backgroundColor.blue = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D) * 4/3);
   }
   CleanUp(state);
 }
