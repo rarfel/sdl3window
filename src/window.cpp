@@ -12,9 +12,9 @@ int InitSDL()
   return 0;
 }
 
-int CreateWindowAndRenderer(const char *title, int width, int height, SDL_WindowFlags flags, SDLWindowState &state)
+int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
 {
-  if (!SDL_CreateWindowAndRenderer(title, width, height, flags, &state.window, &state.renderer))
+  if (!SDL_CreateWindowAndRenderer(title, state.width, state.height, flags, &state.window, &state.renderer))
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
       return 1;
