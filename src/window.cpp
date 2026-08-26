@@ -22,6 +22,12 @@ int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowS
   return 0;
 }
 
+void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
+{
+  SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+  SDL_RenderClear(state.renderer);
+}
+
 void CleanUp(SDLWindowState &state)
 {
   SDL_DestroyRenderer(state.renderer);

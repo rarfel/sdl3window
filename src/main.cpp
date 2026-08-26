@@ -1,4 +1,4 @@
-#include "headers/draw.h"
+#include "headers/window.h"
 #include "SDL3/SDL_main.h"
 
 int main(int argc, char *argv[])
@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   CreateWindowAndRenderer("SDL3Window", SDL_WINDOW_RESIZABLE, state);
 
   glm::vec4 backgroundColor = {0.0, 0.0, 0.0, 1.0};
-  glm::ivec4 lineColor = {255, 0, 255, 255};
+  glm::ivec4 lineColor = {255, 255, 255, 255};
   // game loop
   bool running = true;
   while(running)
@@ -37,8 +37,21 @@ int main(int argc, char *argv[])
     }
     // Drawing commands
     DrawBackground(state, backgroundColor);
+    // Funky background is back i guess
+    const double now = ((double)SDL_GetTicks()) / 1000.0;
+    backgroundColor.r = (float) (0.5 + 0.5 * SDL_sin(now));
+    backgroundColor.g = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2/3));
+    backgroundColor.b = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D) * 4/3);
     SDL_SetRenderDrawColor(state.renderer, lineColor.r, lineColor.g, lineColor.b, lineColor.a);
-    SDL_RenderLine(state.renderer, 0, 0, state.width, state.height);
+    // Making a square with lines just for show
+    SDL_RenderLine(state.renderer, (state.width/5.0), (100), (state.width/5.0), (state.height - 100));
+    SDL_RenderLine(state.renderer, (state.width/1.2), (100), (state.width/1.2), (state.height - 100));
+
+    SDL_RenderLine(state.renderer, (state.width/5.0), (100), (state.width/1.2), (100));
+    SDL_RenderLine(state.renderer, (state.width/5.0), (state.height - 100), (state.width/1.2), (state.height - 100));
+
+    SDL_RenderLine(state.renderer, (state.width/5.0), (100), (state.width/1.2), (state.height - 100));
+    SDL_RenderLine(state.renderer, (state.width/5.0), (state.height - 100), (state.width/1.2), (100));
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
   }
