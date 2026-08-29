@@ -21,4 +21,6 @@ bool EventHandler(SDLWindowState state, SDL_Event &event);
 
 void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);
 
+void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);
+
 void CleanUp(SDLWindowState &state);
