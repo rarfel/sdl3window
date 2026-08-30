@@ -6,8 +6,8 @@ struct SDLWindowState
 {
   SDL_Window *window;
   SDL_Renderer *renderer;
-  int width;
-  int height;
+  float width;
+  float height;
 };
 
 int InitSDL();
@@ -17,7 +17,7 @@ int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state
 
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor);
 
-bool EventHandler(SDLWindowState state, SDL_Event &event);
+bool EventHandler(SDLWindowState *state, SDL_Event &event);
 
 void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);
 

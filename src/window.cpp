@@ -41,14 +41,14 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     SDL_Event event { 0 };
     while (SDL_PollEvent(&event))
     {
-      running = EventHandler(state, event);
+      running = EventHandler(&state, event);
     }
     DrawBackground(state, backgroundColor);
   }
   CleanUp(state);
 }
 
-bool EventHandler(SDLWindowState state, SDL_Event &event)
+bool EventHandler(SDLWindowState *state, SDL_Event &event)
 {
   switch (event.type)
   {
@@ -59,8 +59,9 @@ bool EventHandler(SDLWindowState state, SDL_Event &event)
     }
     case SDL_EVENT_WINDOW_RESIZED:
     {
-      state.width = event.window.data1;
-      state.height = event.window.data2;
+      state->width = event.window.data1;
+      state->height = event.window.data2;
+      SDL_Log("X:%f|Y:%f", state->width,state->height);
       break;
     }
   }
