@@ -44,7 +44,11 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
       running = EventHandler(&state, event);
     }
     DrawBackground(state, backgroundColor);
+
+    //swap buffers and show to screen
+    SDL_RenderPresent(state.renderer);
   }
+
   CleanUp(state);
 }
 
@@ -61,7 +65,6 @@ bool EventHandler(SDLWindowState *state, SDL_Event &event)
     {
       state->width = event.window.data1;
       state->height = event.window.data2;
-      SDL_Log("X:%f|Y:%f", state->width,state->height);
       break;
     }
   }
@@ -72,8 +75,6 @@ void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
 {
   SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
   SDL_RenderClear(state.renderer);
-  //swap buffers and show to screen
-  SDL_RenderPresent(state.renderer);
 }
 
 void CleanUp(SDLWindowState &state)
