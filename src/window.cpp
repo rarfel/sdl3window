@@ -1,4 +1,7 @@
 #include "headers/window.h"
+#include "../vendor/imgui/imgui.h"
+#include "../vendor/imgui/imgui_impl_sdl3.h"
+#include "../vendor/imgui/imgui_impl_sdlrenderer3.h"
 
 struct SDLWindowState;
 
@@ -36,18 +39,51 @@ int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
 {
   bool running = true;
+
+  // Init ImGui
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO &io = ImGui::GetIO(); (void)io;
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; //Enable Keyboard
+  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; //Enable Gamepad
+
+  ImGui::StyleColorsDark();
+  io.Fonts->AddFontDefault();
+  
+  ImGui_ImplSDL3_InitForSDLRenderer(state.window, state.renderer);
+  ImGui_ImplSDLRenderer3_Init(state.renderer);
+
   while(running)
   {
     SDL_Event event { 0 };
     while (SDL_PollEvent(&event))
     {
+      // Poll events for ImGui
+      ImGui_ImplSDL3_ProcessEvent(&event);
       running = EventHandler(&state, event);
     }
     DrawBackground(state, backgroundColor);
 
+    // Start ImGui frame
+    ImGui_ImplSDLRenderer3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+
+    // Show Demo Frame
+    ImGui::ShowDemoWindow();
+
+    // Render Imgui Frame
+    ImGui::Render();
+    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), state.renderer);
+
+
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
   }
+  // Clean ImGui
+  ImGui_ImplSDLRenderer3_Shutdown();
+  ImGui_ImplSDL3_Shutdown();
+  ImGui::DestroyContext();
 
   CleanUp(state);
 }
