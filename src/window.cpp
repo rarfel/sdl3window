@@ -1,7 +1,5 @@
-#include "headers/window.h"
-#include "../vendor/imgui/imgui.h"
-#include "../vendor/imgui/imgui_impl_sdl3.h"
-#include "../vendor/imgui/imgui_impl_sdlrenderer3.h"
+#include "headers/window.hpp"
+#include "headers/imguiMenu.hpp"
 
 struct SDLWindowState;
 
@@ -39,51 +37,51 @@ int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
 {
   LoopState loopState = LoopState::RUNNING;
+  bool demoMenu = true;
 
   // Init ImGui
-  IMGUI_CHECKVERSION();
-  ImGui::CreateContext();
-  ImGuiIO &io = ImGui::GetIO(); (void)io;
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; //Enable Keyboard
-  io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; //Enable Gamepad
-
-  ImGui::StyleColorsDark();
-  io.Fonts->AddFontDefault();
-  
-  ImGui_ImplSDLRenderer3_Init(state.renderer);
-  ImGui_ImplSDL3_InitForSDLRenderer(state.window, state.renderer);
+  ImGuiIO *io = InitImGuiMenu(&ImGui_ImplSDL3_InitForSDLRenderer, state.window, state.renderer);
 
   while(loopState != LoopState::QUIT)
   {
     SDL_Event event { 0 };
     while (SDL_PollEvent(&event))
     {
-      // Poll events for ImGui
+      // Poll events for ImGui and SDL3
       ImGui_ImplSDL3_ProcessEvent(&event);
       EventHandler(&state, event, loopState);
     }
     DrawBackground(state, backgroundColor);
 
-    // Start ImGui frame
-    ImGui_ImplSDL3_NewFrame();
-    ImGui_ImplSDLRenderer3_NewFrame();
-    ImGui::NewFrame();
+    StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
 
+    // Create a menu with ImGui::Begin() --menu information-- ImGui::End()
+    {
+      ImGui::Begin("Hello, world!");
+
+      ImGui::Text("This is some useful text.");
+      ImGui::Checkbox("Demo Window", &demoMenu);
+
+      ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
+
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
+      if(ImGui::Button("Close Window"))
+      {
+        loopState = LoopState::QUIT;
+      }
+      ImGui::End();
+    }
     // Show Demo Frame
-    ImGui::ShowDemoWindow();
+    if(demoMenu) 
+      ImGui::ShowDemoWindow();
 
-    // Render Imgui Frame
-    ImGui::Render();
-    ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), state.renderer);
-
+    RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);
+    
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
   }
-  // Clean ImGui
-  ImGui_ImplSDLRenderer3_Shutdown();
-  ImGui_ImplSDL3_Shutdown();
-  ImGui::DestroyContext();
 
+  CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
   CleanUp(state);
 }
 

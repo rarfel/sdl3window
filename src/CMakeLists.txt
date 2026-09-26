@@ -2,6 +2,7 @@ add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE 
                               main.cpp
                               window.cpp
+                              imguiMenu.cpp
                               # Adding Imgui Dependencies
                               ../vendor/imgui/imgui.cpp
                               ../vendor/imgui/imgui_draw.cpp
