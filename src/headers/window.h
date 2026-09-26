@@ -10,13 +10,22 @@ struct SDLWindowState
   float height = -1;
 };
 
+enum class LoopState
+{
+  QUIT,
+  RUNNING,
+};
+
 int InitSDL();
 
 int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
 int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
 
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor);
-bool EventHandler(SDLWindowState *state, SDL_Event &event);
+void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState);
+
+void KeyboardHandler(SDL_Event &event, LoopState &loopState);
+void MouseHandler(SDL_Event &event);
 
 void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);
 

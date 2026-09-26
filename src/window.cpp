@@ -38,7 +38,7 @@ int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state
 
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
 {
-  bool running = true;
+  LoopState loopState = LoopState::RUNNING;
 
   // Init ImGui
   IMGUI_CHECKVERSION();
@@ -50,23 +50,23 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
   ImGui::StyleColorsDark();
   io.Fonts->AddFontDefault();
   
-  ImGui_ImplSDL3_InitForSDLRenderer(state.window, state.renderer);
   ImGui_ImplSDLRenderer3_Init(state.renderer);
+  ImGui_ImplSDL3_InitForSDLRenderer(state.window, state.renderer);
 
-  while(running)
+  while(loopState != LoopState::QUIT)
   {
     SDL_Event event { 0 };
     while (SDL_PollEvent(&event))
     {
       // Poll events for ImGui
       ImGui_ImplSDL3_ProcessEvent(&event);
-      running = EventHandler(&state, event);
+      EventHandler(&state, event, loopState);
     }
     DrawBackground(state, backgroundColor);
 
     // Start ImGui frame
-    ImGui_ImplSDLRenderer3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
+    ImGui_ImplSDLRenderer3_NewFrame();
     ImGui::NewFrame();
 
     // Show Demo Frame
@@ -75,7 +75,6 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     // Render Imgui Frame
     ImGui::Render();
     ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), state.renderer);
-
 
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
@@ -88,23 +87,50 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
   CleanUp(state);
 }
 
-bool EventHandler(SDLWindowState *state, SDL_Event &event)
+void KeyboardHandler(SDL_Event &event, LoopState &loopState)
+{
+  switch (event.key.key) 
+  {
+    case SDLK_Q:
+      loopState = LoopState::QUIT;
+    break;
+  }
+}
+
+void MouseHandler(SDL_Event &event)
+{
+  switch (event.button.button) 
+  {
+    case SDL_BUTTON_LEFT:
+      SDL_Log("Left Click");
+    break;
+    case SDL_BUTTON_MIDDLE:
+      SDL_Log("Middle Click");
+    break;
+    case SDL_BUTTON_RIGHT:
+      SDL_Log("Right Click");
+    break;
+  }
+}
+
+void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState)
 {
   switch (event.type)
   {
     case SDL_EVENT_QUIT:
-    {
-      return false;
-      break;
-    }
+      loopState = LoopState::QUIT;
+    break;
     case SDL_EVENT_WINDOW_RESIZED:
-    {
       state->width = event.window.data1;
       state->height = event.window.data2;
-      break;
-    }
+    break;
+    case SDL_EVENT_KEY_UP:
+      KeyboardHandler(event, loopState);
+    break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+      MouseHandler(event);
+    break;
   }
-  return true;
 }
 
 void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
