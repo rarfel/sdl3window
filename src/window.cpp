@@ -13,25 +13,25 @@ int InitSDL()
   return 0;
 }
 
-int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
+bool CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
 {
   if (!SDL_CreateWindowAndRenderer(title, state.width, state.height, flags, &state.window, &state.renderer))
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
-      return 1;
+      return false;
     }
-  return 0;
+  return true;
 }
 
-int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
+bool CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
 {
   state.window = SDL_CreateWindow(title, state.width, state.height, flags);
   if (!state.window)
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
-      return 1;
+      return false;
     }
-  return 0;
+  return true;
 }
 
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
@@ -40,7 +40,7 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
   bool demoMenu = true;
 
   // Init ImGui
-  ImGuiIO *io = InitImGuiMenu(&ImGui_ImplSDL3_InitForSDLRenderer, state.window, state.renderer);
+  //ImGuiIO *io = InitImGuiMenu(&ImGui_ImplSDL3_InitForSDLRenderer, state.window, state.renderer);
 
   while(loopState != LoopState::QUIT)
   {
@@ -48,12 +48,12 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     while (SDL_PollEvent(&event))
     {
       // Poll events for ImGui and SDL3
-      ImGui_ImplSDL3_ProcessEvent(&event);
+      //ImGui_ImplSDL3_ProcessEvent(&event);
       EventHandler(&state, event, loopState);
     }
     DrawBackground(state, backgroundColor);
 
-    StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
+    /*StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
 
     // Create a menu with ImGui::Begin() --menu information-- ImGui::End()
     {
@@ -75,13 +75,13 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     if(demoMenu) 
       ImGui::ShowDemoWindow();
 
-    RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);
+    RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);*/
     
     //swap buffers and show to screen
     SDL_RenderPresent(state.renderer);
   }
 
-  CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
+  //CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
   CleanUp(state);
 }
 

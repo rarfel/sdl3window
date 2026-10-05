@@ -18,8 +18,8 @@ enum class LoopState
 
 int InitSDL();
 
-int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
-int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
+bool CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
+bool CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
 
 void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor);
 void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState);
