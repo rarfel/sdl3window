@@ -1,9 +1,9 @@
 #pragma once
 
-#include <cstdint>
 #define VK_NO_PROTOTYPES
 #include <SDL3/SDL_vulkan.h>
 #include <string>
+#include <iostream>
 #include <vulkan/vulkan.h>
 #include <array>
 #include <shaderc/shaderc.hpp>
@@ -12,6 +12,13 @@ struct VmaAllocator_T;
 typedef struct VmaAllocator_T* VmaAllocator;
 struct VmaAllocation_T;
 typedef struct VmaAllocation_T* VmaAllocation;
+
+struct FrameResources
+{
+	VkCommandPool commandPool = nullptr;
+	VkCommandBuffer commandBuffer = nullptr;
+	VkSemaphore imageAcquiredSemaphore = nullptr;
+};
 
 class VulkanRenderer
 {
@@ -26,6 +33,7 @@ class VulkanRenderer
   ~VulkanRenderer();
 
   constexpr static uint32_t VULKAN_VERSION{VK_API_VERSION_1_4};
+  constexpr static uint32_t MaxFramesInFlight{ 2 };
   constexpr static VkFormat swapchainFormat{ VK_FORMAT_B8G8R8A8_SRGB };
   constexpr static VkFormat depthFormat{ VK_FORMAT_D32_SFLOAT };
 
@@ -58,6 +66,18 @@ class VulkanRenderer
 	VkImageView depthImageView = nullptr;
 	VmaAllocation depthImageAllocation = nullptr;
 
+  // shader
+	VkShaderModule vertShader = nullptr;
+	VkShaderModule fragShader = nullptr;
+
+  // graphics pipeline
+	VkPipelineLayout pipelineLayout = nullptr;
+	VkPipeline pipeline = nullptr;
+
+  // frame and synchronization resources
+	VkSemaphore timelineSemaphore = nullptr;
+	std::array<FrameResources, MaxFramesInFlight> frameResources;
+
   bool InitVulkan();
   bool CreateVulkanInstance();
   bool CreateSurface();
@@ -66,5 +86,10 @@ class VulkanRenderer
   bool CreateDevice(VkPhysicalDevice physicalDevice);
   bool InitializeVMA();
   bool CreateSwapchain(uint32_t width, uint32_t height);
+  void DestroySwapchain();
+  VkShaderModule CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind);
+  bool CreateShaders();
+  VkPipeline CreateGraphicPipeline();
+  bool CreateSyncResources();
   void CleanVulkan();
 };

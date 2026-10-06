@@ -3,6 +3,7 @@ target_sources(${PROJECT_NAME} PRIVATE
                               main.cpp
                               window.cpp
                               imguiMenu.cpp
+                              fileReader.cpp
 
                               #Vulkan
                               vulkanRender.cpp

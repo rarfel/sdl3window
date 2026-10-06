@@ -1,11 +1,9 @@
 #include "headers/vulkanRender.hpp"
+#include "headers/fileReader.hpp"
 
 #include <SDL3/SDL.h>
-#include <algorithm>
-#include <cstdint>
-#include <iostream>
-#include <vector>
-#include <vulkan/vk_platform.h>
+#include <shaderc/shaderc.h>
+#include <shaderc/status.h>
 #include <vulkan/vulkan_core.h>
 #define VOLK_IMPLEMENTATION
 #include <volk/volk.h>
@@ -41,41 +39,59 @@ bool VulkanRenderer::InitVulkan()
 {
   if(!CreateVulkanInstance())
   {
-    SDL_Log("Error: Couldn't create a vulkan instance");
+    std::print("Error: Couldn't create a vulkan instance");
     return false;
   }
   if(!CreateSurface())
   {
-    SDL_Log("Error: Couldn't create window surface");
+    std::print("Error: Couldn't create window surface");
     return false;
   }
   if(physicalDevice = FindPhysicalDevice(); !physicalDevice)
   {
-    SDL_Log("Unable to find appropriate physical device");
+    std::print("Unable to find appropriate physical device");
     return false;
   }
 
   if(!FindGraphicsQueue())
   {
-    SDL_Log("Unable to find compatible graphics queue");
+    std::print("Unable to find compatible graphics queue");
     return false;
   }
 
   if(!CreateDevice(physicalDevice))
   {
-    SDL_Log("Couldn't create the logical GPU device");
+    std::print("Couldn't create the logical GPU device");
     return false;
   }
 
   if(!InitializeVMA())
   {
-    SDL_Log("Unable to create Vulkan Memory Allocator");
+    std::print("Unable to create Vulkan Memory Allocator");
     return false;
   }
 
   if(!CreateSwapchain(width, height))
   {
-    SDL_Log("Couldn't create swapchain");
+    std::print("Couldn't create swapchain");
+    return false;
+  }
+
+  if(!CreateShaders())
+  {
+    std::print("Couldn't create shaders modules");
+    return false;
+  }
+
+  if(pipeline = CreateGraphicPipeline(); !pipeline)
+  {
+    std::print("Unable to initialize graphics pipeline");
+    return false;
+  }
+
+  if(!CreateSyncResources())
+  {
+    std::print("Couldn't create the sync related resources");
     return false;
   }
 
@@ -196,7 +212,7 @@ VkPhysicalDevice VulkanRenderer::FindPhysicalDevice()
 
   if(!formatSupported)
   {
-    SDL_Log("Requested Swapchain format not supported by the surface");
+    std::print("Requested Swapchain format not supported by the surface");
     return nullptr;
   }
 
@@ -242,7 +258,7 @@ bool VulkanRenderer::CreateDevice(VkPhysicalDevice physicalDevice)
   // check if render has support for what it needs
   if(!supportedFeatures13.dynamicRendering || !supportedFeatures13.synchronization2 || !supportedFeatures12.timelineSemaphore)
   {
-    SDL_Log("Physical device doesn't meet the feature requirements");
+    std::print("Physical device doesn't meet the feature requirements");
     return false;
   }
 
@@ -305,7 +321,7 @@ bool VulkanRenderer::CreateDevice(VkPhysicalDevice physicalDevice)
   vkGetDeviceQueue(device, gfxQueueFamIdx, 0, &gfxQueue);
   if(!gfxQueue)
   {
-    SDL_Log("Couldn't get graphics queue");
+    std::print("Couldn't get graphics queue");
     return false;
   }
   return true;
@@ -345,7 +361,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   VkSurfaceCapabilitiesKHR surfaceCaps{};
   if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps) != VK_SUCCESS)
   {
-    SDL_Log("Couldn't get surface capabilities");
+    std::print("Couldn't get surface capabilities");
     return false;
   }
 
@@ -372,7 +388,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
 
   if(vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS)
   {
-    SDL_Log("ERROR creating swapchain");
+    std::print("ERROR creating swapchain");
     return false;
   }
 
@@ -404,7 +420,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
 
     if(vkCreateImageView(device, &imgViewInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
     {
-      SDL_Log("ERROR creating swapchain image view");
+      std::print("ERROR creating swapchain image view");
       return false;
     }
   }
@@ -416,7 +432,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
     VkSemaphoreCreateInfo semaphorInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     if(vkCreateSemaphore(device, &semaphorInfo, nullptr, &semaphor) != VK_SUCCESS)
     {
-      SDL_Log("ERROR creating the render-complete semaphor");
+      std::print("ERROR creating the render-complete semaphor");
       return false;
     }
   }
@@ -443,7 +459,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   };
   if(vmaCreateImage(vmaAllocator, &depthCreateInfo, &allocInfo, &depthImage, &depthImageAllocation, nullptr) != VK_SUCCESS)
   {
-    SDL_Log("ERROR allocating depth image");
+    std::print("ERROR allocating depth image");
     return false;
   }
 
@@ -457,15 +473,284 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   };
   if(vkCreateImageView(device, &depthImgViewInfo, nullptr, &depthImageView) != VK_SUCCESS)
   {
-    SDL_Log("ERROR creating depth image view");
+    std::print("ERROR creating depth image view");
+    return false;
+  }
+  return true;
+}
+
+void VulkanRenderer::DestroySwapchain()
+{
+  for(VkImageView swapchainImgView : swapchainImageViews)
+  {
+    vkDestroyImageView(device, swapchainImgView, nullptr);
+  }
+  swapchainImageViews.clear();
+
+  // destroy render-complete semaphores
+  for(VkSemaphore &semaphore : renderCompleteSemaphores)
+  {
+    vkDestroySemaphore(device, semaphore, nullptr);
+  }
+  renderCompleteSemaphores.clear();
+
+  if(swapchain)
+  {
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    swapchain = nullptr;
+  }
+
+  // destroy the depth buffer along with the swapchain
+  if(depthImageView)
+  {
+    vkDestroyImageView(device, depthImageView, nullptr);
+    vmaDestroyImage(vmaAllocator, depthImage, depthImageAllocation);
+    depthImageView = nullptr;
+  }
+}
+
+VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind)
+{
+  // read shader file from disk
+  const std::string shaderPath = "src/shaders/" + fileName;
+  const std::string src = readTextFile(shaderPath);
+  if(src.empty())
+  {
+    std::print("Specified shader file not found: {}", shaderPath);
+    return nullptr;
+  }
+
+  // compile shaders to SPIR-V
+  std::print("Compiling shader: {}", shaderPath);
+  shaderc::Compiler compiler;
+  shaderc::CompileOptions opts;
+  opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
+  opts.SetTargetSpirv(shaderc_spirv_version_1_6);
+  opts.SetOptimizationLevel(shaderc_optimization_level_performance);
+  shaderc::CompilationResult result = compiler.CompileGlslToSpv(src, kind, fileName.c_str(), opts);
+
+  if(result.GetCompilationStatus() != shaderc_compilation_status_success)
+  {
+    std::cerr << "Shader Compilation Error: " << result.GetErrorMessage() << std::endl;
+    return nullptr;
+  }
+
+  const size_t shaderSize = (result.cend() - result.cbegin()) * sizeof(uint32_t);
+  // pass SPIR-V to vulkan and create shader-module
+  VkShaderModuleCreateInfo moduleCreateInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+    .codeSize = shaderSize,
+    .pCode = result.cbegin(),
+  };
+
+  VkShaderModule shaderModule = nullptr;
+  if(vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS)
+  {
+    std::print("ERROR creating shader module");
+    return nullptr;
+  }
+  return shaderModule;
+}
+
+bool VulkanRenderer::CreateShaders()
+{
+  // creating the shader modules the graphics pipeline will need
+  if(vertShader = CreateShaderModule("shader.vert", shaderc_vertex_shader); !vertShader)
+  {
+    return false;
+  }
+  if(fragShader = CreateShaderModule("shader.frag", shaderc_fragment_shader); !vertShader)
+  {
+    return false;
+  }
+  return true;
+}
+
+VkPipeline VulkanRenderer::CreateGraphicPipeline()
+{
+  // need to define pipeline layout
+  VkPipelineLayoutCreateInfo pipelineCreateInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+    .setLayoutCount = 0,
+    .pushConstantRangeCount = 0,
+  };
+  if(vkCreatePipelineLayout(device, &pipelineCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+  {
+    std::print("Unable to create pipeline layout");
+    return nullptr;
+  }
+
+  // configure the shader stages struct
+  const char * entryPoint = "main";
+  std::vector<VkPipelineShaderStageCreateInfo> shaderStages
+  {
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_VERTEX_BIT,
+      .module = vertShader,
+      .pName = entryPoint,
+    },
+    {
+      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+      .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .module = fragShader,
+      .pName = entryPoint,
+    },
+  };
+
+  // vertex pulling, vertex input details not defined
+  VkPipelineVertexInputStateCreateInfo vertInputInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+  };
+
+  // assembly pulling, draw triangle lists
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+  };
+
+  // depth/stencil config
+  VkPipelineDepthStencilStateCreateInfo depthStencilInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    .depthTestEnable = VK_TRUE,
+    .depthWriteEnable = VK_TRUE,
+    .depthCompareOp = VK_COMPARE_OP_LESS,
+    .stencilTestEnable = VK_FALSE,
+  };
+
+  // dynamicRendering allows to dynamically(~tada~) change the viewport
+  VkPipelineViewportStateCreateInfo viewportInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    .viewportCount = 1,
+    .pViewports = nullptr,
+    .scissorCount = 1,
+    .pScissors = nullptr,
+  };
+
+  //rasterizer settings
+  VkPipelineRasterizationStateCreateInfo rasterInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+    .polygonMode = VK_POLYGON_MODE_FILL,
+    .cullMode = VK_CULL_MODE_BACK_BIT,
+    .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+    .lineWidth = 1.0,
+  };
+
+  // no multisampling
+  VkPipelineMultisampleStateCreateInfo multisampleInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+    .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+  };
+
+  // Alpha-bending (disabled), color mask still need to be set
+  VkPipelineColorBlendAttachmentState attachState
+  {
+    .blendEnable = VK_FALSE,
+    .colorWriteMask = 
+      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+  };
+
+  VkPipelineColorBlendStateCreateInfo blendInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+    .attachmentCount = 1,
+    .pAttachments = &attachState
+  };
+
+  // enable dynamic state
+  std::vector<VkDynamicState> dynamicState
+  {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+  VkPipelineDynamicStateCreateInfo dynamicStateInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+    .dynamicStateCount = static_cast<uint32_t>(dynamicState.size()),
+    .pDynamicStates = dynamicState.data(),
+  };
+
+  // struct required for dynamic rendering
+  VkPipelineRenderingCreateInfo renderInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+    .colorAttachmentCount = 1,
+    .pColorAttachmentFormats = &swapchainFormat,
+    .depthAttachmentFormat = depthFormat,
+  };
+
+  // Create graphics pipeline
+  VkGraphicsPipelineCreateInfo pipelineInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+    .pNext = &renderInfo,
+    .stageCount = static_cast<uint32_t>(shaderStages.size()),
+    .pStages = shaderStages.data(),
+    .pVertexInputState = &vertInputInfo,
+    .pInputAssemblyState = &inputAssemblyInfo,
+    .pViewportState = &viewportInfo,
+    .pRasterizationState = &rasterInfo,
+    .pMultisampleState = &multisampleInfo,
+    .pDepthStencilState = &depthStencilInfo,
+    .pColorBlendState = &blendInfo,
+    .pDynamicState = &dynamicStateInfo,
+    .layout = pipelineLayout,
+    .renderPass = VK_NULL_HANDLE,
+  };
+  
+  VkPipeline newPipeline;
+  if(vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
+  {
+    std::print("ERROR Creating the pipeline");
+    return nullptr;
+  }
+  return newPipeline;
+}
+
+bool VulkanRenderer::CreateSyncResources()
+{
+  VkSemaphoreTypeCreateInfo semaphoreTypeInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+    .semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+    .initialValue = MaxFramesInFlight,
+  };
+  VkSemaphoreCreateInfo semaphoreInfo
+  {
+    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+    .pNext = &semaphoreTypeInfo,
+  };
+  if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &timelineSemaphore) != VK_SUCCESS)
+  {
+    std::print("Unable to create the timeline semaphore");
     return false;
   }
 
+  // per-frame image-acquire semaphores
+  for(FrameResources &res : frameResources)
+  {
+    //create the bynary semaphores
+    VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
+    if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &res.imageAcquiredSemaphore) != VK_SUCCESS)
+    {
+      std::print("ERROR creating the per-fame image-acquire semaphore");
+      return false;
+    }
+  }
   return true;
 }
 
 void VulkanRenderer::CleanVulkan()
 {
+  // cleanup swapchain
+  DestroySwapchain();
+
   // vma
   if(vmaAllocator)
   {
