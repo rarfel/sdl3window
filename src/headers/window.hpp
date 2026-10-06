@@ -1,13 +1,14 @@
 #pragma once
 #include "SDL3/SDL.h"
 #include "glm/glm.hpp"
+#include <cstdint>
 
 struct SDLWindowState
 {
   SDL_Window *window = nullptr;
   SDL_Renderer *renderer = nullptr;
-  float width = -1;
-  float height = -1;
+  uint32_t width = -1;
+  uint32_t height = -1;
 };
 
 enum class LoopState

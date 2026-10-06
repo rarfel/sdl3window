@@ -1,13 +1,17 @@
 #pragma once
 
+#include <cstdint>
 #define VK_NO_PROTOTYPES
 #include <SDL3/SDL_vulkan.h>
 #include <string>
 #include <vulkan/vulkan.h>
-#include <vector>
 #include <array>
-#include <string>
 #include <shaderc/shaderc.hpp>
+
+struct VmaAllocator_T;
+typedef struct VmaAllocator_T* VmaAllocator;
+struct VmaAllocation_T;
+typedef struct VmaAllocation_T* VmaAllocation;
 
 class VulkanRenderer
 {
@@ -18,19 +22,49 @@ class VulkanRenderer
       const VkDebugUtilsMessengerCallbackDataEXT *pCallBackData,
       void *pUserData);
 
-  VulkanRenderer(SDL_Window *win);
+  VulkanRenderer(SDL_Window *win, int w, int h);
+  ~VulkanRenderer();
+
+  constexpr static uint32_t VULKAN_VERSION{VK_API_VERSION_1_4};
+  constexpr static VkFormat swapchainFormat{ VK_FORMAT_B8G8R8A8_SRGB };
+  constexpr static VkFormat depthFormat{ VK_FORMAT_D32_SFLOAT };
 
   // SDL
   SDL_Window *window;
+  uint32_t width;
+  uint32_t height;
 
   // vulkan core
   VkInstance vulkanInstance = nullptr;
   VkSurfaceKHR surface = nullptr;
   VkPhysicalDevice physicalDevice = nullptr;
+  VkDevice device = nullptr;
+  VmaAllocator vmaAllocator = nullptr;
+
+  // queue
+  uint32_t gfxQueueFamIdx = UINT32_MAX;
+  VkQueue gfxQueue = nullptr;
+
+  // swapchain
+  VkSwapchainKHR swapchain = nullptr;
+	std::vector<VkImage> swapchainImages;
+	std::vector<VkImageView> swapchainImageViews;
+	std::vector<VkSemaphore> renderCompleteSemaphores;
+	bool requireSwapchainRecreate = false;
+  uint32_t swapchainWidth = 0;
+	uint32_t swapchainHeight = 0;
+
+  VkImage depthImage = nullptr;
+	VkImageView depthImageView = nullptr;
+	VmaAllocation depthImageAllocation = nullptr;
 
   bool InitVulkan();
   bool CreateVulkanInstance();
   bool CreateSurface();
   VkPhysicalDevice FindPhysicalDevice();
+  bool FindGraphicsQueue();
+  bool CreateDevice(VkPhysicalDevice physicalDevice);
+  bool InitializeVMA();
+  bool CreateSwapchain(uint32_t width, uint32_t height);
   void CleanVulkan();
 };
