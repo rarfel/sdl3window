@@ -85,8 +85,7 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
 
     RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);*/
     
-    //swap buffers and show to screen
-    renderer.Render();
+    renderer.Render(backgroundColor);
     }
 
   //CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);

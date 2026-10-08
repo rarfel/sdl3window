@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 
   CreateWindow("SDL3Window", SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE, state);
 
-  glm::vec4 backgroundColor = {0.0, 0.0, 0.0, 1.0};
+  glm::vec4 backgroundColor = {0.01, 0.01, 0.01, 1.0};
 
   LoopHandler(state, backgroundColor);
 }

@@ -102,7 +102,7 @@ bool VulkanRenderer::InitVulkan()
   return true;
 }
 
-void VulkanRenderer::Render()
+void VulkanRenderer::Render(glm::vec4 backgroundColor)
 {
   // first check if swapchain is valid
   if(requireSwapchainRecreate)
@@ -213,7 +213,7 @@ void VulkanRenderer::Render()
     .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, //clear the image
     .storeOp = VK_ATTACHMENT_STORE_OP_STORE, // keep data for presentation
-    .clearValue{.color{0.01,0.01,0.01,1}}
+    .clearValue{.color{backgroundColor.r,backgroundColor.g,backgroundColor.b,backgroundColor.a}}
   };
   VkRenderingAttachmentInfo depthAttachInfo
   {
@@ -768,7 +768,6 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, s
 
   // compile shaders to SPIR-V
   std::print("Compiling shader: {}\n", shaderPath);
-  std::print("{}",src);
   shaderc::Compiler compiler;
   shaderc::CompileOptions opts;
   opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);

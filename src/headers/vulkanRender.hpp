@@ -1,5 +1,6 @@
 #pragma once
 
+#include "glm/glm.hpp"
 #define VK_NO_PROTOTYPES
 #include <SDL3/SDL_vulkan.h>
 #include <string>
@@ -96,7 +97,7 @@ class VulkanRenderer
   bool CreateSyncResources();
   bool CreateCommandBuffers();
 
-  void Render();
+  void Render(glm::vec4 backgroundColor);
 
   void CleanVulkan();
 };
