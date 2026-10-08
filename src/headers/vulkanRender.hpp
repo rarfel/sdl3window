@@ -29,13 +29,13 @@ class VulkanRenderer
       const VkDebugUtilsMessengerCallbackDataEXT *pCallBackData,
       void *pUserData);
 
-  VulkanRenderer(SDL_Window *win, int w, int h);
-  ~VulkanRenderer();
-
   constexpr static uint32_t VULKAN_VERSION{VK_API_VERSION_1_4};
   constexpr static uint32_t MaxFramesInFlight{ 2 };
   constexpr static VkFormat swapchainFormat{ VK_FORMAT_B8G8R8A8_SRGB };
   constexpr static VkFormat depthFormat{ VK_FORMAT_D32_SFLOAT };
+
+  uint64_t frameIndex = 0;
+  uint64_t nextSignalValue = MaxFramesInFlight + 1;
 
   // SDL
   SDL_Window *window;
@@ -78,7 +78,10 @@ class VulkanRenderer
 	VkSemaphore timelineSemaphore = nullptr;
 	std::array<FrameResources, MaxFramesInFlight> frameResources;
 
+  public:
+  VulkanRenderer(SDL_Window *win, uint32_t w, uint32_t h);
   bool InitVulkan();
+
   bool CreateVulkanInstance();
   bool CreateSurface();
   VkPhysicalDevice FindPhysicalDevice();
@@ -91,5 +94,9 @@ class VulkanRenderer
   bool CreateShaders();
   VkPipeline CreateGraphicPipeline();
   bool CreateSyncResources();
+  bool CreateCommandBuffers();
+
+  void Render();
+
   void CleanVulkan();
 };

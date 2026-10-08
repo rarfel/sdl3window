@@ -1,5 +1,6 @@
 #include "headers/window.hpp"
 #include "headers/imguiMenu.hpp"
+#include "headers/vulkanRender.hpp"
 
 struct SDLWindowState;
 
@@ -39,6 +40,13 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
   LoopState loopState = LoopState::RUNNING;
   bool demoMenu = true;
 
+  VulkanRenderer renderer(state.window, state.width, state.height);
+  if(!renderer.InitVulkan())
+  {
+    SDL_Log("Counld't init vulkan");
+    return;
+  }
+
   // Init ImGui
   //ImGuiIO *io = InitImGuiMenu(&ImGui_ImplSDL3_InitForSDLRenderer, state.window, state.renderer);
 
@@ -51,7 +59,7 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
       //ImGui_ImplSDL3_ProcessEvent(&event);
       EventHandler(&state, event, loopState);
     }
-    DrawBackground(state, backgroundColor);
+    //DrawBackground(state, backgroundColor);
 
     /*StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
 
@@ -78,10 +86,11 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);*/
     
     //swap buffers and show to screen
-    SDL_RenderPresent(state.renderer);
-  }
+    renderer.Render();
+    }
 
   //CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
+  renderer.CleanVulkan();
   CleanUp(state);
 }
 
@@ -139,7 +148,6 @@ void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
 
 void CleanUp(SDLWindowState &state)
 {
-  SDL_DestroyRenderer(state.renderer);
   SDL_DestroyWindow(state.window);
   SDL_Quit();
 }
