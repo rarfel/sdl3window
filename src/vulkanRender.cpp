@@ -152,7 +152,7 @@ void VulkanRenderer::Render()
   VkCommandBufferBeginInfo cmdBeginInfo
   {
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-    .flags = VK_COMMAND_BUFFER_USAGE_FLAG_BITS_MAX_ENUM,
+    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
   };
   vkBeginCommandBuffer(res.commandBuffer, &cmdBeginInfo);
 
@@ -768,6 +768,7 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, s
 
   // compile shaders to SPIR-V
   std::print("Compiling shader: {}\n", shaderPath);
+  std::print("{}",src);
   shaderc::Compiler compiler;
   shaderc::CompileOptions opts;
   opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
