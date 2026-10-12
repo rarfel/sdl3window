@@ -2,10 +2,6 @@
 #include "headers/fileReader.hpp"
 
 #include <SDL3/SDL.h>
-#include <cstdint>
-#include <shaderc/shaderc.h>
-#include <shaderc/status.h>
-#include <vulkan/vulkan_core.h>
 #define VOLK_IMPLEMENTATION
 #include <volk/volk.h>
 #define VMA_IMPLEMENTATION
@@ -200,8 +196,8 @@ void VulkanRenderer::Render(glm::vec4 backgroundColor)
   VkDependencyInfo depInfo
   {
     .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-      .imageMemoryBarrierCount = static_cast<uint32_t>(layoutBarriers.size()),
-      .pImageMemoryBarriers = layoutBarriers.data()
+    .imageMemoryBarrierCount = static_cast<uint32_t>(layoutBarriers.size()),
+    .pImageMemoryBarriers = layoutBarriers.data()
   };
   vkCmdPipelineBarrier2(res.commandBuffer, &depInfo);
 
@@ -535,13 +531,13 @@ bool VulkanRenderer::CreateDevice(VkPhysicalDevice physicalDevice)
   };
 
   // request the queues the render will use
-  std::vector<float> queuePriorities{1.0};
+  float queuePriorities{1.0};
   VkDeviceQueueCreateInfo gfxQueueInfo
   {
     .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
     .queueFamilyIndex = gfxQueueFamIdx,
     .queueCount = 1,
-    .pQueuePriorities = queuePriorities.data()
+    .pQueuePriorities = &queuePriorities
   };
 
   // device specific extensions
@@ -755,7 +751,7 @@ void VulkanRenderer::DestroySwapchain()
   }
 }
 
-VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind)
+VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind) const
 {
   // read shader file from disk
   const std::string shaderPath = "src/shaders/" + fileName;
@@ -767,7 +763,7 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, s
   }
 
   // compile shaders to SPIR-V
-  std::print("Compiling shader: {}\n", shaderPath);
+  std::println("Compiling shader: {}", shaderPath);
   shaderc::Compiler compiler;
   shaderc::CompileOptions opts;
   opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
@@ -806,7 +802,7 @@ bool VulkanRenderer::CreateShaders()
   {
     return false;
   }
-  if(fragShader = CreateShaderModule("shader.frag", shaderc_fragment_shader); !vertShader)
+  if(fragShader = CreateShaderModule("shader.frag", shaderc_fragment_shader); !fragShader)
   {
     return false;
   }
@@ -829,7 +825,7 @@ VkPipeline VulkanRenderer::CreateGraphicPipeline()
   }
 
   // configure the shader stages struct
-  const char * entryPoint = "main";
+  const char *entryPoint = "main";
   std::vector<VkPipelineShaderStageCreateInfo> shaderStages
   {
     {
@@ -1009,9 +1005,9 @@ bool VulkanRenderer::CreateCommandBuffers()
     VkCommandBufferAllocateInfo cmdAllocInfo
     {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .commandPool = res.commandPool,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1,
+      .commandPool = res.commandPool,
+      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+      .commandBufferCount = 1,
     };
 
     if(vkAllocateCommandBuffers(device, &cmdAllocInfo, &res.commandBuffer) != VK_SUCCESS)

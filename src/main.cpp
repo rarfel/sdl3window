@@ -3,15 +3,11 @@
 
 int main(int argc, char *argv[])
 {
-  SDLWindowState state;
-  state.width = 800;
-  state.height = 600;
+  Window window("SDL3Window", SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE, 800, 600);
 
-  InitSDL();
-
-  CreateWindow("SDL3Window", SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE, state);
+  window.CreateWindow();
 
   glm::vec4 backgroundColor = {0.01, 0.01, 0.01, 1.0};
 
-  LoopHandler(state, backgroundColor);
+  window.LoopHandler(backgroundColor);
 }

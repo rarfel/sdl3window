@@ -6,7 +6,6 @@
 struct SDLWindowState
 {
   SDL_Window *window = nullptr;
-  SDL_Renderer *renderer = nullptr;
   uint32_t width = -1;
   uint32_t height = -1;
 };
@@ -17,17 +16,28 @@ enum class LoopState
   RUNNING,
 };
 
-int InitSDL();
+class Window
+{
+  SDLWindowState state;
+  LoopState loopState;
+  const char *windowTitle;
+  SDL_WindowFlags windowFlags;
 
-bool CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
-bool CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state);
+  int InitSDL();
 
-void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor);
-void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState);
+  void EventHandler(SDL_Event &event);
 
-void KeyboardHandler(SDL_Event &event, LoopState &loopState);
-void MouseHandler(SDL_Event &event);
+  void KeyboardHandler(SDL_Event &event, LoopState &loopState);
+  void MouseHandler(SDL_Event &event);
+  void DrawBackground(glm::vec4 backgroundColor);
 
-void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor);
+  void CleanSDL();
 
-void CleanUp(SDLWindowState &state);
+  public:
+  Window(const char *title, SDL_WindowFlags flags, uint32_t width, uint32_t height);
+  ~Window();
+
+  bool CreateWindow();
+
+  void LoopHandler(glm::vec4 backgroundColor);
+};

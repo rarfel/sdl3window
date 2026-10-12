@@ -9,6 +9,7 @@
 #include <array>
 #include <shaderc/shaderc.hpp>
 
+struct SDL_Window;
 struct VmaAllocator_T;
 typedef struct VmaAllocator_T* VmaAllocator;
 struct VmaAllocation_T;
@@ -39,9 +40,7 @@ class VulkanRenderer
   uint64_t nextSignalValue = MaxFramesInFlight + 1;
 
   // SDL
-  SDL_Window *window;
-  uint32_t width;
-  uint32_t height;
+  SDL_Window *window = nullptr;
 
   // vulkan core
   VkInstance vulkanInstance = nullptr;
@@ -80,6 +79,9 @@ class VulkanRenderer
 	std::array<FrameResources, MaxFramesInFlight> frameResources;
 
   public:
+  uint32_t width;
+  uint32_t height;
+
   VulkanRenderer(SDL_Window *win, uint32_t w, uint32_t h);
   bool InitVulkan();
 
@@ -91,7 +93,7 @@ class VulkanRenderer
   bool InitializeVMA();
   bool CreateSwapchain(uint32_t width, uint32_t height);
   void DestroySwapchain();
-  VkShaderModule CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind);
+  VkShaderModule CreateShaderModule(const std::string &fileName, shaderc_shader_kind kind) const;
   bool CreateShaders();
   VkPipeline CreateGraphicPipeline();
   bool CreateSyncResources();
