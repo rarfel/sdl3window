@@ -1,9 +1,7 @@
 #include "headers/window.hpp"
 #include "headers/imguiMenu.hpp"
 
-struct SDLWindowState;
-
-int InitSDL()
+int Window::InitSDL()
 {
   if(!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -13,9 +11,9 @@ int InitSDL()
   return 0;
 }
 
-int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
+int Window::CreateWindowAndRenderer()
 {
-  if (!SDL_CreateWindowAndRenderer(title, state.width, state.height, flags, &state.window, &state.renderer))
+  if (!SDL_CreateWindowAndRenderer(windowTitle, state.width, state.height, windowFlags, &state.window, &state.renderer))
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
       return 1;
@@ -23,9 +21,9 @@ int CreateWindowAndRenderer(const char *title, SDL_WindowFlags flags, SDLWindowS
   return 0;
 }
 
-int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state)
+int Window::CreateWindow()
 {
-  state.window = SDL_CreateWindow(title, state.width, state.height, flags);
+  state.window = SDL_CreateWindow(windowTitle, state.width, state.height, windowFlags);
   if (!state.window)
     {
       SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
@@ -34,9 +32,23 @@ int CreateWindow(const char *title, SDL_WindowFlags flags, SDLWindowState &state
   return 0;
 }
 
-void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
+Window::Window(const char *title, SDL_WindowFlags flags, uint32_t width, uint32_t height)
 {
-  LoopState loopState = LoopState::RUNNING;
+  InitSDL();
+  windowTitle = title;
+  windowFlags = flags;
+  state.width = width;
+  state.height = height;
+}
+
+Window::~Window()
+{
+  CleanSDL();
+}
+
+void Window::LoopHandler(glm::vec4 backgroundColor)
+{
+  loopState = LoopState::RUNNING;
   bool demoMenu = true;
 
   // Init ImGui
@@ -49,9 +61,9 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
     {
       // Poll events for ImGui and SDL3
       ImGui_ImplSDL3_ProcessEvent(&event);
-      EventHandler(&state, event, loopState);
+      EventHandler(event);
     }
-    DrawBackground(state, backgroundColor);
+    DrawBackground(backgroundColor);
 
     StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
 
@@ -82,10 +94,10 @@ void LoopHandler(SDLWindowState state, glm::vec4 backgroundColor)
   }
 
   CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
-  CleanUp(state);
+  CleanSDL();
 }
 
-void KeyboardHandler(SDL_Event &event, LoopState &loopState)
+void Window::KeyboardHandler(SDL_Event &event, LoopState &loopState)
 {
   switch (event.key.key) 
   {
@@ -95,7 +107,7 @@ void KeyboardHandler(SDL_Event &event, LoopState &loopState)
   }
 }
 
-void MouseHandler(SDL_Event &event)
+void Window::MouseHandler(SDL_Event &event)
 {
   switch (event.button.button) 
   {
@@ -111,7 +123,7 @@ void MouseHandler(SDL_Event &event)
   }
 }
 
-void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState)
+void Window::EventHandler(SDL_Event &event)
 {
   switch (event.type)
   {
@@ -119,8 +131,8 @@ void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState)
       loopState = LoopState::QUIT;
     break;
     case SDL_EVENT_WINDOW_RESIZED:
-      state->width = event.window.data1;
-      state->height = event.window.data2;
+      state.width = event.window.data1;
+      state.height = event.window.data2;
     break;
     case SDL_EVENT_KEY_UP:
       KeyboardHandler(event, loopState);
@@ -131,13 +143,13 @@ void EventHandler(SDLWindowState *state, SDL_Event &event, LoopState &loopState)
   }
 }
 
-void DrawBackground(SDLWindowState state, glm::vec4 backgroundColor)
+void Window::DrawBackground(glm::vec4 backgroundColor)
 {
   SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
   SDL_RenderClear(state.renderer);
 }
 
-void CleanUp(SDLWindowState &state)
+void Window::CleanSDL()
 {
   SDL_DestroyRenderer(state.renderer);
   SDL_DestroyWindow(state.window);
