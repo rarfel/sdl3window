@@ -7,6 +7,6 @@ There is a bash script to clone all the dependencies from source (`sh dependenci
 ### ImGui
 The ImGui folder contains both the normal SDL3 renders, vulkan and opengl backends, most of the backends behave similary, so the helper functions in the `imguiMenu.cpp` accept the render implementation directly and only simple modifications are needed to make it work.
 ### Vulkan
-I created this project to learn the vulkan API, inside the vendor directory, the VulkanSDK was downloaded and is going to be used to develop it further.  
+I created this project to learn the vulkan API, I'm currently following <a href="https://www.youtube.com/watch?v=DC9FBRQKNck">this</a> tutorial.  
 ## debug
 If sometime during development you need to debug the code, you can use `sh debug.sh` to create a debug folder, it uses gdb, so be aware of that.  

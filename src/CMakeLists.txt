@@ -3,6 +3,11 @@ target_sources(${PROJECT_NAME} PRIVATE
                               main.cpp
                               window.cpp
                               imguiMenu.cpp
+                              fileReader.cpp
+
+                              #Vulkan
+                              vulkanRender.cpp
+
                               # Adding Imgui Dependencies
                               ../vendor/imgui/imgui.cpp
                               ../vendor/imgui/imgui_draw.cpp

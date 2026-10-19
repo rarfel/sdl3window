@@ -1,11 +1,11 @@
 #pragma once
 #include "SDL3/SDL.h"
 #include "glm/glm.hpp"
+#include <cstdint>
 
 struct SDLWindowState
 {
   SDL_Window *window = nullptr;
-  SDL_Renderer *renderer = nullptr;
   uint32_t width = -1;
   uint32_t height = -1;
 };
@@ -30,8 +30,6 @@ class Window
   void KeyboardHandler(SDL_Event &event, LoopState &loopState);
   void MouseHandler(SDL_Event &event);
 
-  void DrawBackground(glm::vec4 backgroundColor);
-
   void CleanSDL();
 
   public:
@@ -39,8 +37,7 @@ class Window
   Window(const char *title, SDL_WindowFlags flags, uint32_t width, uint32_t height);
   ~Window();
 
-  int CreateWindowAndRenderer();
-  int CreateWindow();
+  bool CreateWindow();
 
   void LoopHandler(glm::vec4 backgroundColor);
 };

@@ -1,35 +1,26 @@
 #include "headers/window.hpp"
 #include "headers/imguiMenu.hpp"
+#include "headers/vulkanRender.hpp"
 
 int Window::InitSDL()
 {
   if(!SDL_Init(SDL_INIT_VIDEO))
-    {
-      SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error when initializing SDL3", nullptr);
-      return 1;
-    }
+  {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error when initializing SDL3", nullptr);
+    return 1;
+  }
   return 0;
 }
 
-int Window::CreateWindowAndRenderer()
-{
-  if (!SDL_CreateWindowAndRenderer(windowTitle, state.width, state.height, windowFlags, &state.window, &state.renderer))
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window and renderer: %s", SDL_GetError());
-      return 1;
-    }
-  return 0;
-}
-
-int Window::CreateWindow()
+bool Window::CreateWindow()
 {
   state.window = SDL_CreateWindow(windowTitle, state.width, state.height, windowFlags);
   if (!state.window)
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
-      return 1;
-    }
-  return 0;
+  {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
+    return false;
+  }
+  return true;
 }
 
 Window::Window(const char *title, SDL_WindowFlags flags, uint32_t width, uint32_t height)
@@ -51,8 +42,12 @@ void Window::LoopHandler(glm::vec4 backgroundColor)
   loopState = LoopState::RUNNING;
   bool demoMenu = true;
 
-  // Init ImGui
-  ImGuiIO *io = InitImGuiMenu(&ImGui_ImplSDL3_InitForSDLRenderer, state.window, state.renderer);
+  VulkanRenderer renderer(state.window, state.width, state.height);
+  if(!renderer.InitVulkan())
+  {
+    SDL_Log("Counld't init vulkan");
+    return;
+  }
 
   while(loopState != LoopState::QUIT)
   {
@@ -60,40 +55,17 @@ void Window::LoopHandler(glm::vec4 backgroundColor)
     while (SDL_PollEvent(&event))
     {
       // Poll events for ImGui and SDL3
-      ImGui_ImplSDL3_ProcessEvent(&event);
+      //ImGui_ImplSDL3_ProcessEvent(&event);
       EventHandler(event);
     }
-    DrawBackground(backgroundColor);
 
-    StartImGuiFrame(&ImGui_ImplSDLRenderer3_NewFrame);
-
-    // Create a menu with ImGui::Begin() --menu information-- ImGui::End()
-    {
-      ImGui::Begin("Hello, world!");
-
-      ImGui::Text("This is some useful text.");
-      ImGui::Checkbox("Demo Window", &demoMenu);
-
-      ImGui::ColorEdit3("Background Color", (float*)&backgroundColor);
-
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io->Framerate, io->Framerate);
-      if(ImGui::Button("Close Window"))
-      {
-        loopState = LoopState::QUIT;
-      }
-      ImGui::End();
-    }
-    // Show Demo Frame
-    if(demoMenu) 
-      ImGui::ShowDemoWindow();
-
-    RenderImGuiFrame(&ImGui_ImplSDLRenderer3_RenderDrawData, state.renderer);
-    
-    //swap buffers and show to screen
-    SDL_RenderPresent(state.renderer);
+    renderer.width = state.width;
+    renderer.height = state.height;
+    renderer.Render(backgroundColor);
   }
 
-  CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
+  //CleanImGuiMenu(&ImGui_ImplSDLRenderer3_Shutdown);
+  renderer.CleanVulkan();
   CleanSDL();
 }
 
@@ -143,15 +115,8 @@ void Window::EventHandler(SDL_Event &event)
   }
 }
 
-void Window::DrawBackground(glm::vec4 backgroundColor)
-{
-  SDL_SetRenderDrawColorFloat(state.renderer, backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-  SDL_RenderClear(state.renderer);
-}
-
 void Window::CleanSDL()
 {
-  SDL_DestroyRenderer(state.renderer);
   SDL_DestroyWindow(state.window);
   SDL_Quit();
 }
