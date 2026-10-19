@@ -5,6 +5,7 @@
 #include <SDL3/SDL_vulkan.h>
 #include <string>
 #include <iostream>
+#include <vector>
 #include <vulkan/vulkan.h>
 #include <array>
 #include <shaderc/shaderc.hpp>

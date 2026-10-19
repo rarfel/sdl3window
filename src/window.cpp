@@ -5,10 +5,10 @@
 int Window::InitSDL()
 {
   if(!SDL_Init(SDL_INIT_VIDEO))
-    {
-      SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error when initializing SDL3", nullptr);
-      return 1;
-    }
+  {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", "Error when initializing SDL3", nullptr);
+    return 1;
+  }
   return 0;
 }
 
@@ -16,10 +16,10 @@ bool Window::CreateWindow()
 {
   state.window = SDL_CreateWindow(windowTitle, state.width, state.height, windowFlags);
   if (!state.window)
-    {
-      SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
-      return false;
-    }
+  {
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Couldn't create window: %s", SDL_GetError());
+    return false;
+  }
   return true;
 }
 

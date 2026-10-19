@@ -2,6 +2,7 @@
 #include "headers/fileReader.hpp"
 
 #include <SDL3/SDL.h>
+#include <vulkan/vulkan_core.h>
 #define VOLK_IMPLEMENTATION
 #include <volk/volk.h>
 #define VMA_IMPLEMENTATION
@@ -31,67 +32,67 @@ bool VulkanRenderer::InitVulkan()
 {
   if(!CreateVulkanInstance())
   {
-    std::print("Error: Couldn't create a vulkan instance");
+    std::println("Error: Couldn't create a vulkan instance");
     return false;
   }
 
   if(!CreateSurface())
   {
-    std::print("Error: Couldn't create window surface");
+    std::println("Error: Couldn't create window surface");
     return false;
   }
 
   if(physicalDevice = FindPhysicalDevice(); !physicalDevice)
   {
-    std::print("Unable to find appropriate physical device");
+    std::println("Unable to find appropriate physical device");
     return false;
   }
 
   if(!FindGraphicsQueue())
   {
-    std::print("Unable to find compatible graphics queue");
+    std::println("Unable to find compatible graphics queue");
     return false;
   }
 
   if(!CreateDevice(physicalDevice))
   {
-    std::print("Couldn't create the logical GPU device");
+    std::println("Couldn't create the logical GPU device");
     return false;
   }
 
   if(!InitializeVMA())
   {
-    std::print("Unable to create Vulkan Memory Allocator");
+    std::println("Unable to create Vulkan Memory Allocator");
     return false;
   }
 
   if(!CreateSwapchain(width, height))
   {
-    std::print("Couldn't create swapchain");
+    std::println("Couldn't create swapchain");
     return false;
   }
 
   if(!CreateShaders())
   {
-    std::print("Couldn't create shaders modules");
+    std::println("Couldn't create shaders modules");
     return false;
   }
 
   if(pipeline = CreateGraphicPipeline(); !pipeline)
   {
-    std::print("Unable to initialize graphics pipeline");
+    std::println("Unable to initialize graphics pipeline");
     return false;
   }
 
   if(!CreateSyncResources())
   {
-    std::print("Couldn't create the sync related resources");
+    std::println("Couldn't create the sync related resources");
     return false;
   }
 
   if(!CreateCommandBuffers())
   {
-    std::print("Couldn't create command buffers");
+    std::println("Couldn't create command buffers");
     return false;
   }
 
@@ -216,7 +217,7 @@ void VulkanRenderer::Render(glm::vec4 backgroundColor)
     .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
     .imageView = depthImageView,
     .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-    .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD, //clear the depth data
+    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, //clear the depth data
     .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE, // discard after rendering
     .clearValue{.depthStencil{1.0,0}}
   };
@@ -347,7 +348,7 @@ bool VulkanRenderer::CreateVulkanInstance()
 {
   if(volkInitialize() != VK_SUCCESS)
   {
-    std::print("ERROR: couldn't initialize volk");
+    std::println("ERROR: couldn't initialize volk");
     return false;
   }
   
@@ -454,7 +455,7 @@ VkPhysicalDevice VulkanRenderer::FindPhysicalDevice()
 
   if(!formatSupported)
   {
-    std::print("Requested Swapchain format not supported by the surface");
+    std::println("Requested Swapchain format not supported by the surface");
     return nullptr;
   }
 
@@ -467,7 +468,7 @@ bool VulkanRenderer::FindGraphicsQueue()
   uint32_t queueFamCount = 0;
   vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamCount, nullptr);
   std::vector<VkQueueFamilyProperties2> queueFamProps(queueFamCount,
-      {.sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+      {VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
   vkGetPhysicalDeviceQueueFamilyProperties2(physicalDevice, &queueFamCount, queueFamProps.data());
 
   for(int currentFamIdx = 0; currentFamIdx < queueFamProps.size(); currentFamIdx++)
@@ -500,7 +501,7 @@ bool VulkanRenderer::CreateDevice(VkPhysicalDevice physicalDevice)
   // check if render has support for what it needs
   if(!supportedFeatures13.dynamicRendering || !supportedFeatures13.synchronization2 || !supportedFeatures12.timelineSemaphore)
   {
-    std::print("Physical device doesn't meet the feature requirements");
+    std::println("Physical device doesn't meet the feature requirements");
     return false;
   }
 
@@ -563,7 +564,7 @@ bool VulkanRenderer::CreateDevice(VkPhysicalDevice physicalDevice)
   vkGetDeviceQueue(device, gfxQueueFamIdx, 0, &gfxQueue);
   if(!gfxQueue)
   {
-    std::print("Couldn't get graphics queue");
+    std::println("Couldn't get graphics queue");
     return false;
   }
   return true;
@@ -603,7 +604,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   VkSurfaceCapabilitiesKHR surfaceCaps{};
   if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps) != VK_SUCCESS)
   {
-    std::print("Couldn't get surface capabilities");
+    std::println("Couldn't get surface capabilities");
     return false;
   }
 
@@ -630,7 +631,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
 
   if(vkCreateSwapchainKHR(device, &swapchainCreateInfo, nullptr, &swapchain) != VK_SUCCESS)
   {
-    std::print("ERROR creating swapchain");
+    std::println("ERROR creating swapchain");
     return false;
   }
 
@@ -662,7 +663,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
 
     if(vkCreateImageView(device, &imgViewInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS)
     {
-      std::print("ERROR creating swapchain image view");
+      std::println("ERROR creating swapchain image view");
       return false;
     }
   }
@@ -674,7 +675,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
     VkSemaphoreCreateInfo semaphorInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     if(vkCreateSemaphore(device, &semaphorInfo, nullptr, &semaphor) != VK_SUCCESS)
     {
-      std::print("ERROR creating the render-complete semaphor");
+      std::println("ERROR creating the render-complete semaphor");
       return false;
     }
   }
@@ -701,7 +702,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   };
   if(vmaCreateImage(vmaAllocator, &depthCreateInfo, &allocInfo, &depthImage, &depthImageAllocation, nullptr) != VK_SUCCESS)
   {
-    std::print("ERROR allocating depth image");
+    std::println("ERROR allocating depth image");
     return false;
   }
 
@@ -715,7 +716,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   };
   if(vkCreateImageView(device, &depthImgViewInfo, nullptr, &depthImageView) != VK_SUCCESS)
   {
-    std::print("ERROR creating depth image view");
+    std::println("ERROR creating depth image view");
     return false;
   }
   return true;
@@ -758,12 +759,12 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, s
   const std::string src = readTextFile(shaderPath);
   if(src.empty())
   {
-    std::print("Specified shader file not found: {}", shaderPath);
+    std::println("Specified shader file not found: {}", shaderPath);
     return nullptr;
   }
 
   // compile shaders to SPIR-V
-  std::println("Compiling shader: {}", shaderPath);
+  //std::println("Compiling shader: {}", shaderPath);
   shaderc::Compiler compiler;
   shaderc::CompileOptions opts;
   opts.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
@@ -789,7 +790,7 @@ VkShaderModule VulkanRenderer::CreateShaderModule(const std::string &fileName, s
   VkShaderModule shaderModule = nullptr;
   if(vkCreateShaderModule(device, &moduleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS)
   {
-    std::print("ERROR creating shader module");
+    std::println("ERROR creating shader module");
     return nullptr;
   }
   return shaderModule;
@@ -812,15 +813,15 @@ bool VulkanRenderer::CreateShaders()
 VkPipeline VulkanRenderer::CreateGraphicPipeline()
 {
   // need to define pipeline layout
-  VkPipelineLayoutCreateInfo pipelineCreateInfo
+  VkPipelineLayoutCreateInfo pipelineLayoutInfo
   {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
     .setLayoutCount = 0,
     .pushConstantRangeCount = 0,
   };
-  if(vkCreatePipelineLayout(device, &pipelineCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+  if(vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
   {
-    std::print("Unable to create pipeline layout");
+    std::println("Unable to create pipeline layout");
     return nullptr;
   }
 
@@ -880,7 +881,7 @@ VkPipeline VulkanRenderer::CreateGraphicPipeline()
     .polygonMode = VK_POLYGON_MODE_FILL,
     .cullMode = VK_CULL_MODE_BACK_BIT,
     .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-    .lineWidth = 1.0,
+    .lineWidth = 1.0f,
   };
 
   // no multisampling
@@ -944,13 +945,12 @@ VkPipeline VulkanRenderer::CreateGraphicPipeline()
     .renderPass = VK_NULL_HANDLE,
   };
   
-  VkPipeline newPipeline;
-  if(vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &newPipeline) != VK_SUCCESS)
+  if(vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
   {
-    std::print("ERROR Creating the pipeline");
+    std::println("ERROR Creating the pipeline");
     return nullptr;
   }
-  return newPipeline;
+  return pipeline;
 }
 
 bool VulkanRenderer::CreateSyncResources()
@@ -968,7 +968,7 @@ bool VulkanRenderer::CreateSyncResources()
   };
   if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &timelineSemaphore) != VK_SUCCESS)
   {
-    std::print("Unable to create the timeline semaphore");
+    std::println("Unable to create the timeline semaphore");
     return false;
   }
 
@@ -979,7 +979,7 @@ bool VulkanRenderer::CreateSyncResources()
     VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,};
     if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &res.imageAcquiredSemaphore) != VK_SUCCESS)
     {
-      std::print("ERROR creating the per-fame image-acquire semaphore");
+      std::println("ERROR creating the per-fame image-acquire semaphore");
       return false;
     }
   }
@@ -998,7 +998,7 @@ bool VulkanRenderer::CreateCommandBuffers()
     };
     if(vkCreateCommandPool(device, &poolInfo, nullptr, &res.commandPool) != VK_SUCCESS)
     {
-      std::print("Unable to create command buffer pool");
+      std::println("Unable to create command buffer pool");
       return false;
     }
     // create the command buffer for this frame
@@ -1012,7 +1012,7 @@ bool VulkanRenderer::CreateCommandBuffers()
 
     if(vkAllocateCommandBuffers(device, &cmdAllocInfo, &res.commandBuffer) != VK_SUCCESS)
     {
-      std::print("Unable to allocate command buffer");
+      std::println("Unable to allocate command buffer");
       return false;
     }
   }
