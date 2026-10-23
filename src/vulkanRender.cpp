@@ -28,11 +28,6 @@ VulkanRenderer::VulkanRenderer(SDL_Window *win, uint32_t w, uint32_t h)
   height = h;
 }
 
-VulkanRenderer::~VulkanRenderer()
-{
-  CleanVulkan();
-}
-
 bool VulkanRenderer::InitVulkan()
 {
   if(!CreateVulkanInstance())
