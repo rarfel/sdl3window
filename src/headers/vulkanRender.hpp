@@ -84,6 +84,7 @@ class VulkanRenderer
   uint32_t height;
 
   VulkanRenderer(SDL_Window *win, uint32_t w, uint32_t h);
+  ~VulkanRenderer();
   bool InitVulkan();
 
   bool CreateVulkanInstance();
