@@ -596,16 +596,23 @@ bool VulkanRenderer::InitializeVMA()
 
 bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
 {
-  // track swapchain size separate from window size
-  swapchainWidth = width;
-  swapchainHeight = height;
-
   // requesting appropriate number of images
   VkSurfaceCapabilitiesKHR surfaceCaps{};
   if(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps) != VK_SUCCESS)
   {
     std::println("Couldn't get surface capabilities");
     return false;
+  }
+
+  // track swapchain size separate from window size
+  swapchainWidth = width;
+  swapchainHeight = height;
+
+  // if surface returns a different size use that instead
+  if(width != surfaceCaps.currentExtent.width & height != surfaceCaps.currentExtent.height)
+  {
+    swapchainWidth = surfaceCaps.currentExtent.width;
+    swapchainHeight = surfaceCaps.currentExtent.height;
   }
 
   uint32_t requestedImageCount = std::max(2u, surfaceCaps.minImageCount);
