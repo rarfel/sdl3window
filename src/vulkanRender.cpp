@@ -609,7 +609,7 @@ bool VulkanRenderer::CreateSwapchain(uint32_t width, uint32_t height)
   swapchainHeight = height;
 
   // if surface returns a different size use that instead
-  if(width != surfaceCaps.currentExtent.width & height != surfaceCaps.currentExtent.height)
+  if(width != surfaceCaps.currentExtent.width | height != surfaceCaps.currentExtent.height)
   {
     swapchainWidth = surfaceCaps.currentExtent.width;
     swapchainHeight = surfaceCaps.currentExtent.height;
